@@ -1,0 +1,20 @@
+version: '3'
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27018:27017"  # Changed host port to avoid conflict
+    volumes:
+      - mongo-data:/data/db
+ 
+  app:
+    build: .
+    ports:
+      - "3007:3001"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/mydb  # No change needed here
+ 
+volumes:
+  mongo-data:

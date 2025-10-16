@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Dashboard - Rajasthan Seva Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Poppins, Arial, sans-serif;
+      background: linear-gradient(120deg, #e6f0ff 0%, #c8e1ff 100%);
+      margin: 0;
+      padding: 0;
+    }
+    nav {
+      background: #00337c;
+      color: #fff;
+      padding: 14px 30px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .logo {font-size:23px; color:#4fd2ff; font-weight:700;}
+    nav ul {list-style:none;display:flex;gap:18px;margin:0;padding:0;}
+    nav ul li a {color:#fff!important; text-decoration:none; font-weight:500; padding:6px 12px;border-radius:6px;transition: background .13s;}
+    nav ul li a:hover {background: #ffffff11; color: #4fd2ff!important;}
+    .main {
+      max-width: 870px; margin: 36px auto 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 8px 30px #0099ff22;
+      padding: 34px 28px 18px 28px;
+    }
+    .main h2 {color: #00337c; text-align:center;}
+    .filters {display:flex; gap:18px; margin:13px 0 24px 0;}
+    .filters select {padding:6px 12px; border-radius:7px; border:1px solid #b5d6ff; font-size:15px;}
+    table {width:100%; border-collapse:collapse; margin-top:16px;}
+    th, td {padding:11px 8px; border-bottom:1px solid #f2f2f2;}
+    th {background:#f4faff; color:#006bbc;}
+    td.status-cell {text-align:center;}
+    .status-chip {
+      display: inline-block; padding: 7px 17px; border-radius:14px; font-size:14px; font-weight:600;
+      background: #eee; color: #444;
+    }
+    .status-Registered   {background: #e3e8ed; color: #606060;}
+    .status-Processing   {background: #d2ebff; color: #157af6;}
+    .status-Review       {background: #fff1d6; color: #e88800;}
+    .status-Resolved     {background: #ddf7e2; color: #059033;}
+    @media(max-width:700px){
+      nav, .filters, .main {flex-direction:column;}
+      .main{padding:7vw 3vw;}
+      table,th,td{font-size: 13px;}
+    }
+    .alert { margin:12px 0; color:#c0392b; background: #ffd3cf; border-radius:8px; padding:10px 13px; font-size: 15px;}
+    .no-data {text-align:center; margin-top: 25px; color: #aaa;}
+    .add-btn {
+      display:inline-block; float: right; margin-bottom: 16px;
+      background: #007bff; color: #fff; border-radius: 16px; padding: 11px 22px; font-size: 15px; font-weight: bold;
+      text-decoration: none; transition: background .15s;
+      border: none; cursor: pointer;
+    }
+    .add-btn:hover {background: #005aac;}
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="logo">Rajasthan Seva Portal</span>
+    <ul>
+      <li><a href="index.html">🏠 Home</a></li>
+      <li><a href="dashboard.html" style="color:#4fd2ff;">📊 Dashboard</a></li>
+      <li><a href="complaint.html">📝 Raise Complaint</a></li>
+      <li><a href="categories.html">📂 Category View</a></li>
+      <li><a href="status.html">📋 Track Status</a></li>
+      <li><a href="login.html" id="logoutBtn" style="background:#dc3545;">🚪 Logout</a></li>
+    </ul>
+  </nav>
+  <div class="main">
+    <h2>Your Complaints</h2>
+    <button class="add-btn" onclick="window.location.href='complaint.html'">+ New Complaint</button>
+    <div class="filters">
+      <div>
+        <label for="catFilter">Category:</label>
+        <select id="catFilter">
+          <option value="">All</option>
+          <option value="Water">Water</option>
+          <option value="Electricity">Electricity</option>
+          <option value="Road">Road</option>
+          <option value="Sanitation">Sanitation</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label for="statusFilter">Status:</label>
+        <select id="statusFilter">
+          <option value="">All</option>
+          <option value="Registered">Registered</option>
+          <option value="Processing">Processing</option>
+          <option value="Review">Review</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+    </div>
+    <div id="alert" class="alert" style="display:none"></div>
+    <div style="overflow-x:auto">
+    <table id="complaintsTable">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Location</th>
+          <th>Description</th>
+          <th>Date / Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="complaintsBody">
+        <!-- User's complaints will appear here -->
+      </tbody>
+    </table>
+    </div>
+    <div class="no-data" id="nodata" style="display:none">No complaints found.</div>
+  </div>
+  <script>
+    // Redirect if not logged in / token missing
+    if (!localStorage.getItem('token')) {
+      window.location.href="login.html";
+    }
+    document.getElementById('logoutBtn').onclick = function(e) {
+      e.preventDefault();
+      localStorage.clear();
+      window.location.href="login.html";
+    };
+    // Filters
+    const catFilter = document.getElementById('catFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    let rawComplaints = [];
+    function showAlert(msg) {
+      let alertDiv = document.getElementById('alert');
+      alertDiv.style.display = '';
+      alertDiv.textContent = msg;
+      setTimeout(()=>{alertDiv.style.display='none'}, 2600);
+    }
+    // Fetch user's complaints on page load
+    async function loadComplaints() {
+      try {
+        let res = await fetch("/api/complaints", {
+          headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+        });
+        if (res.status==401) {localStorage.clear(); window.location.href="login.html"; return;}
+        let data = await res.json();
+        if(!res.ok) throw Error(data.msg || "Err fetching");
+        rawComplaints = data;
+        updateComplaintsTable();
+      } catch {
+        showAlert("Could not load complaints. Try again!");
+      }
+    }
+    function updateComplaintsTable() {
+      let tBody = document.getElementById('complaintsBody');
+      let filtered = rawComplaints.filter(c=>
+        (!catFilter.value || c.category===catFilter.value) &&
+        (!statusFilter.value || c.status===statusFilter.value)
+      );
+      tBody.innerHTML = '';
+      if(filtered.length===0){
+        document.getElementById('nodata').style.display='';
+        return;
+      } else {
+        document.getElementById('nodata').style.display='none';
+      }
+      for(let c of filtered) {
+        tBody.innerHTML += `
+          <tr>
+            <td>${c.category||""}</td>
+            <td>${c.location||""}</td>
+            <td>${c.description||""}</td>
+            <td>${(new Date(c.createdAt)).toLocaleString()}</td>
+            <td class="status-cell"><span class="status-chip status-${c.status.replace(/\s/g,'')}">${c.status}</span></td>
+          </tr>`;
+      }
+    }
+    catFilter.onchange = statusFilter.onchange = updateComplaintsTable;
+    window.onload = loadComplaints;
+  </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Submit Complaint - Rajasthan Seva Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: linear-gradient(120deg,#e6f0ff 0%,#c8e1ff 100%);
+      font-family: Poppins, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    
+    /* Center the complaint box */
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .complaint-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .complaint-box {
+      background: #fff;
+      padding: 32px 30px;
+      border-radius: 18px;
+      width: 440px;
+      box-shadow: 0 6px 22px #a1d8ff26;
+    }
+    h2 { text-align:center; color:#00337c; margin-bottom:18px;}
+    .input-group { margin-bottom: 13px; }
+    .input-group label {display:block; font-weight:600; margin-bottom:6px;}
+    .input-group select,
+    .input-group input,
+    .input-group textarea {
+      width: 100%; padding:11px; border-radius:7px; border:1px solid #d4e6fa; font-size:15px;
+      transition: border-color .2s;
+    }
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: #007bff; outline: none;}
+    .input-group textarea {resize: vertical; min-height: 70px;}
+    .msg {margin:8px 0 0 0; font-size:14px;}
+    .msg.error { color:#c0392b;}
+    .msg.success { color:#27ae60;}
+    button {
+      width:100%; padding:11px; border-radius:7px; border:none; font-weight:600; 
+      font-size:16px; background:#007bff; color:white; cursor:pointer; margin-top:10px;
+      transition: background .18s;
+    }
+    button:disabled {background:#b3d5fa;}
+    button:hover:not(:disabled) { background:#0058ab;}
+    .back-link {margin-top:13px; text-align:center;}
+    .back-link a {color:#007bff; text-decoration:none;}
+    .back-link a:hover {text-decoration:underline;}
+  </style>
+</head>
+<body>
+  <!-- Add Navigation -->
+  <nav>
+    <span class="logo">Rajasthan Seva Portal</span>
+    <ul>
+      <li><a href="index.html">🏠 Home</a></li>
+      <li><a href="dashboard.html">📊 Dashboard</a></li>
+      <li><a href="complaint.html" style="color:#4fd2ff;">📝 Raise Complaint</a></li>
+      <li><a href="categories.html">📂 Category View</a></li>
+      <li><a href="status.html">📋 Track Status</a></li>
+      <li><a href="login.html" id="logoutBtn" style="background:#dc3545;">🚪 Logout</a></li>
+    </ul>
+  </nav>
+  
+  <div class="complaint-container">
+    <div class="complaint-box">
+    <h2>📝 Raise a Complaint</h2>
+    <form id="complaintForm" autocomplete="off" novalidate>
+      <div class="input-group">
+        <label for="category">Category</label>
+        <select id="category" required>
+          <option value="">Select...</option>
+          <option value="Water">💧 Water</option>
+          <option value="Electricity">⚡ Electricity</option>
+          <option value="Road">🛣️ Road</option>
+          <option value="Sanitation">🧹 Sanitation</option>
+          <option value="Other">Other</option>
+        </select>
+        <div class="msg" id="errCat"></div>
+      </div>
+      <div class="input-group">
+        <label for="location">Location / Landmark</label>
+        <input id="location" type="text" maxlength="90" required />
+        <div class="msg" id="errLoc"></div>
+      </div>
+      <div class="input-group">
+        <label for="description">Issue Description</label>
+        <textarea id="description" required minlength="10" maxlength="350"></textarea>
+        <div class="msg" id="errDes"></div>
+      </div>
+      <div class="msg error" id="alertBox"></div>
+      <div class="msg success" id="successBox"></div>
+      <button type="submit" id="submitBtn" disabled>Submit Complaint</button>
+    </form>
+    <div class="back-link"><a href="dashboard.html">← Return to Dashboard</a></div>
+    </div>
+  </div>
+  <script>
+    // Check if user is logged in
+    if (!localStorage.getItem('token')) {
+      window.location.href = 'login.html';
+    }
+    
+    // Logout functionality
+    document.getElementById('logoutBtn').onclick = function(e) {
+      e.preventDefault();
+      localStorage.clear();
+      window.location.href = 'login.html';
+    };
+    
+    const cat = document.getElementById('category');
+    const loc = document.getElementById('location');
+    const des = document.getElementById('description');
+    const submitBtn = document.getElementById('submitBtn');
+    const alertBox = document.getElementById('alertBox');
+    const successBox = document.getElementById('successBox');
+
+    function validate() {
+      let valid = true;
+      if(!cat.value) {document.getElementById('errCat').textContent="Select category"; valid=false;}
+      else document.getElementById('errCat').textContent="";
+      if(!loc.value.trim() || loc.value.length<3) {document.getElementById('errLoc').textContent="Specify location"; valid=false;}
+      else document.getElementById('errLoc').textContent="";
+      if(!des.value.trim() || des.value.length<10) {document.getElementById('errDes').textContent="At least 10 characters";}
+      else if(des.value.length>350) {document.getElementById('errDes').textContent="Description too long";}
+      else {document.getElementById('errDes').textContent="";}
+      if(!des.value.trim() || des.value.length<10 || des.value.length>350) valid=false;
+      submitBtn.disabled = !valid;
+      return valid;
+    }
+    cat.oninput = loc.oninput = des.oninput = validate;
+    document.getElementById('complaintForm').onsubmit = async function(e) {
+      e.preventDefault();
+      alertBox.textContent = ""; successBox.textContent = "";
+      if(!validate()) return;
+      submitBtn.disabled = true; submitBtn.textContent = "Submitting...";
+      try {
+        // Assume JWT stored in localStorage as "token"
+        const res = await fetch('/api/complaints', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer '+localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            category: cat.value, location: loc.value.trim(), description: des.value.trim()
+          })
+        });
+        const data = await res.json();
+        if(res.ok && data.complaint && data.complaint._id){
+          successBox.className = "msg success";
+          successBox.innerHTML = `
+            <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #d4edda, #c3e6cb); border-radius: 10px; border: 2px solid #27ae60;">
+              <div style="font-size: 18px; color: #155724; margin-bottom: 10px;">
+                ✅ <b>Complaint Submitted Successfully!</b>
+              </div>
+              <div style="font-size: 14px; color: #155724; margin-bottom: 15px;">
+                Your Ticket ID:
+              </div>
+              <div style="background: #fff; padding: 12px; border-radius: 8px; border: 2px dashed #27ae60; margin-bottom: 15px;">
+                <span id="complaintID" style="font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; color: #007bff;">${data.complaint._id}</span>
+              </div>
+              <button type="button" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-bottom: 10px;" onclick="copyToClipboard(document.getElementById('complaintID').textContent)">📋 Copy Ticket ID</button>
+              <div style="font-size: 13px; color: #6c757d; margin-bottom: 15px;">
+                ⚠️ <b>Important:</b> Please save this Ticket ID to track your complaint status.
+              </div>
+              <div id="countdown" style="font-size: 14px; color: #007bff; font-weight: bold;">
+                Redirecting to Dashboard in <span id="timer">15</span> seconds...
+              </div>
+              <div style="margin-top: 10px;">
+                <button type="button" onclick="window.location.href='dashboard.html'" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Go to Dashboard Now</button>
+                <button type="button" onclick="cancelRedirect()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">Stay Here</button>
+              </div>
+            </div>
+          `;
+          
+          // Start countdown timer
+          let timeLeft = 15;
+          const timerElement = document.getElementById('timer');
+          const countdownInterval = setInterval(() => {
+            timeLeft--;
+            if (timerElement) {
+              timerElement.textContent = timeLeft;
+            }
+            if (timeLeft <= 0) {
+              clearInterval(countdownInterval);
+              window.location.href = 'dashboard.html';
+            }
+          }, 1000);
+          
+          // Function to cancel redirect
+          window.cancelRedirect = function() {
+            clearInterval(countdownInterval);
+            document.getElementById('countdown').innerHTML = '<span style="color: #28a745;">✓ Auto-redirect cancelled. You can stay here as long as needed.</span>';
+          };
+        } else {
+          alertBox.className = "msg error";
+          alertBox.textContent = data.msg || "Error submitting complaint";
+        }
+      } catch {
+        alertBox.className = "msg error";
+        alertBox.textContent = "Network/server error.";
+      } finally {
+        submitBtn.disabled = false; submitBtn.textContent = "Submit Complaint";
+      }
+    };
+
+    // If using script.js for shared helpers, make sure this is loaded
+    // Otherwise, add this basic copyToClipboard for this page:
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          successBox.innerHTML += `<div style="color:#27ae60; font-size:13px;">Complaint ID copied!</div>`;
+        })
+        .catch(() => {
+          successBox.innerHTML += `<div style="color:#c0392b; font-size:13px;">Could not copy!</div>`;
+        });
+    }
+  </script>
+</body>
+</html>
