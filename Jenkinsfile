@@ -4,7 +4,7 @@ pipeline {
         githubPush()
     }
     environment {
-        DOCKER_IMAGE = "gani220/grievance-project-app"
+        DOCKER_IMAGE = "harshii0520/grievance-project-app-portal"
         DOCKER_TAG   = "${BUILD_NUMBER}"
         EKS_CLUSTER_NAME = "project-test-cluster"
         AWS_REGION = "mx-central-1"
@@ -47,7 +47,7 @@ pipeline {
  
         stage('Deploy  Kubernetes') {
             steps {
-                withAWS(credentials: 'G_AWS_CRED', region: "${AWS_REGION}") {
+                withAWS(credentials: 'AWS_Credentials', region: "${AWS_REGION}") {
                     script {
                         sh """
                             echo "🔄 Updating kubeconfig..."
@@ -76,7 +76,7 @@ pipeline {
  
         stage('Get LoadBalancer URL') {
             steps {
-                withAWS(credentials: 'G_AWS_CRED', region: "${AWS_REGION}") {
+                withAWS(credentials: 'AWS_Credentials', region: "${AWS_REGION}") {
                     script {
                         sh """
                             echo "🌐 Getting LoadBalancer URL..."
