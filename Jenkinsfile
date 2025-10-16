@@ -47,7 +47,7 @@ pipeline {
  
         stage('Deploy  Kubernetes') {
             steps {
-                withAWS(credentials: 'AWS_Credentials', region: "${AWS_REGION}") {
+                withAWS(credentials: 'G_AWS_CRED', region: "${AWS_REGION}") {
                     script {
                         sh """
                             echo "🔄 Updating kubeconfig..."
