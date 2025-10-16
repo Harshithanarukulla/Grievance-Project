@@ -4,7 +4,7 @@ pipeline {
         githubPush()
     }
     environment {
-        DOCKER_IMAGE = "harshii0520/grievance-project-app"
+        DOCKER_IMAGE = "gani220/grievance-project-app"
         DOCKER_TAG   = "${BUILD_NUMBER}"
         EKS_CLUSTER_NAME = "project-test-cluster"
         AWS_REGION = "mx-central-1"
